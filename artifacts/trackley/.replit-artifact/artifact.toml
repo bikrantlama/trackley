@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/"
+title = "Trackley"
+version = "1.0.0"
+id = "artifacts/trackley"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+name = "expo"
+paths = [ "/" ]
+localPort = 21252
+
+[services.development]
+run = "pnpm --filter @workspace/trackley run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/trackley", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/trackley", "run", "serve" ]
+
+[services.env]
+PORT = "21252"
+BASE_PATH = "/"

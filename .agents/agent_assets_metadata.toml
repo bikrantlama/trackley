@@ -1,0 +1,8 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "9b36PRb94CZ4XLi2Y9vEU"
+uri = "file://artifacts/trackley/assets/images/icon.png"
+type = "image"
+title = "trackley icon"
