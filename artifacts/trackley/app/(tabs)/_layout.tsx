@@ -25,8 +25,16 @@ function NativeTabLayout() {
         <Label>Fitness</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="finance">
-        <Icon sf={{ default: "dollarsign.circle", selected: "dollarsign.circle.fill" }} />
+        <Icon sf={{ default: "creditcard", selected: "creditcard.fill" }} />
         <Label>Finance</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="friends">
+        <Icon sf={{ default: "person.2", selected: "person.2.fill" }} />
+        <Label>Friends</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="profile">
+        <Icon sf={{ default: "person.circle", selected: "person.circle.fill" }} />
+        <Label>Profile</Label>
       </NativeTabs.Trigger>
     </NativeTabs>
   );
@@ -58,19 +66,11 @@ function ClassicTabLayout() {
         },
         tabBarBackground: () =>
           isIOS ? (
-            <BlurView
-              intensity={100}
-              tint={isDark ? "dark" : "dark"}
-              style={StyleSheet.absoluteFill}
-            />
+            <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
           ) : isWeb ? (
-            <View
-              style={[
-                StyleSheet.absoluteFill,
-                { backgroundColor: colors.background },
-              ]}
-            />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background }]} />
           ) : null,
+        tabBarLabelStyle: { fontSize: 10, fontFamily: "Inter_500Medium" },
       }}
     >
       <Tabs.Screen
@@ -78,11 +78,7 @@ function ClassicTabLayout() {
         options={{
           title: "Home",
           tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView name="house" tintColor={color} size={24} />
-            ) : (
-              <Ionicons name="home" size={22} color={color} />
-            ),
+            isIOS ? <SymbolView name="house" tintColor={color} size={22} /> : <Ionicons name="home" size={21} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -90,15 +86,7 @@ function ClassicTabLayout() {
         options={{
           title: "Habits",
           tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView name="checkmark.circle" tintColor={color} size={24} />
-            ) : (
-              <MaterialCommunityIcons
-                name="checkbox-marked-circle-outline"
-                size={22}
-                color={color}
-              />
-            ),
+            isIOS ? <SymbolView name="checkmark.circle" tintColor={color} size={22} /> : <MaterialCommunityIcons name="checkbox-marked-circle-outline" size={21} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -106,11 +94,7 @@ function ClassicTabLayout() {
         options={{
           title: "Fitness",
           tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView name="figure.run" tintColor={color} size={24} />
-            ) : (
-              <MaterialCommunityIcons name="run" size={22} color={color} />
-            ),
+            isIOS ? <SymbolView name="figure.run" tintColor={color} size={22} /> : <MaterialCommunityIcons name="run" size={21} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -118,24 +102,31 @@ function ClassicTabLayout() {
         options={{
           title: "Finance",
           tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView
-                name="dollarsign.circle"
-                tintColor={color}
-                size={24}
-              />
-            ) : (
-              <MaterialCommunityIcons name="cash" size={22} color={color} />
-            ),
+            isIOS ? <SymbolView name="creditcard" tintColor={color} size={22} /> : <MaterialCommunityIcons name="cash" size={21} color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="friends"
+        options={{
+          title: "Friends",
+          tabBarIcon: ({ color }) =>
+            isIOS ? <SymbolView name="person.2" tintColor={color} size={22} /> : <Ionicons name="people" size={21} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Profile",
+          tabBarIcon: ({ color }) =>
+            isIOS ? <SymbolView name="person.circle" tintColor={color} size={22} /> : <Ionicons name="person-circle" size={22} color={color} />,
+        }}
+      />
+      <Tabs.Screen name="achievements" options={{ href: null }} />
     </Tabs>
   );
 }
 
 export default function TabLayout() {
-  if (isLiquidGlassAvailable()) {
-    return <NativeTabLayout />;
-  }
+  if (isLiquidGlassAvailable()) return <NativeTabLayout />;
   return <ClassicTabLayout />;
 }
