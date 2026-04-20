@@ -36,7 +36,7 @@ import { useApp } from "@/context/AppContext";
 import { ActivityIndicator, View } from "react-native";
 
 function RootLayoutNav() {
-  const { userId, habits } = useApp();
+  const { userId, habits, hasCompletedOnboarding } = useApp();
   const [isReady, setIsReady] = React.useState(false);
   const router = useRouter();
   const prevUserId = useRef<string | null | undefined>(undefined);
@@ -57,12 +57,17 @@ function RootLayoutNav() {
     if (userId !== prevUserId.current) {
       prevUserId.current = userId;
       if (userId) {
-        router.replace("/(tabs)");
+        // New user: show onboarding before tabs
+        if (!hasCompletedOnboarding) {
+          router.replace("/onboarding");
+        } else {
+          router.replace("/(tabs)");
+        }
       } else {
         router.replace("/auth");
       }
     }
-  }, [isReady, userId]);
+  }, [isReady, userId, hasCompletedOnboarding]);
 
   useEffect(() => {
     let sound: Audio.Sound | null = null;
@@ -130,6 +135,7 @@ function RootLayoutNav() {
   return (
     <Stack screenOptions={{ headerShown: false, animation: "fade" }}>
       <Stack.Screen name="auth" options={{ headerShown: false }} />
+      <Stack.Screen name="onboarding" options={{ headerShown: false, animation: "slide_from_right" }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="+not-found" />
     </Stack>

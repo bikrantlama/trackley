@@ -1,12 +1,13 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  Animated as RNAnimated,
 } from "react-native";
 
 import { useApp, getRankForLevel, RANK_THRESHOLDS } from "@/context/AppContext";
@@ -14,6 +15,32 @@ import { useTheme } from "@/hooks/useTheme";
 import { Pedometer } from "expo-sensors";
 import { LinearGradient } from "expo-linear-gradient";
 import { CrystalCard } from "@/components/CrystalCard";
+
+/** Returns a BMI category label */
+function getBmiCategory(bmi: number): { label: string; color: string } {
+  if (bmi < 18.5) return { label: "Underweight", color: "#60A5FA" };
+  if (bmi < 25)   return { label: "Normal", color: "#10D9A0" };
+  if (bmi < 30)   return { label: "Overweight", color: "#F59E0B" };
+  return { label: "Obese", color: "#F43F5E" };
+}
+
+/** Inline consecutive streak counter */
+function getConsecutiveStreak(completedDates: string[]): number {
+  if (completedDates.length === 0) return 0;
+  const sorted = [...completedDates].sort().reverse();
+  const today = new Date();
+  let streak = 0;
+  for (let i = 0; i < sorted.length; i++) {
+    const expected = new Date(today);
+    expected.setDate(today.getDate() - i);
+    if (sorted[i] === expected.toISOString().split("T")[0]) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
 
 function QuickCard({
   icon,
@@ -65,6 +92,19 @@ export default function HomeScreen() {
   const completedToday = habits.filter((h) => h.completedDates.includes(today)).length;
   
   const [stepCount, setStepCount] = React.useState(0);
+
+  // Coin count bounce animation
+  const coinScale = useRef(new RNAnimated.Value(1)).current;
+  const prevCoins = useRef(coins || 0);
+  useEffect(() => {
+    if ((coins || 0) !== prevCoins.current) {
+      prevCoins.current = coins || 0;
+      RNAnimated.sequence([
+        RNAnimated.spring(coinScale, { toValue: 1.35, useNativeDriver: true, speed: 40 }),
+        RNAnimated.spring(coinScale, { toValue: 1, useNativeDriver: true, speed: 20 }),
+      ]).start();
+    }
+  }, [coins]);
 
   React.useEffect(() => {
     let sub: Pedometer.Subscription | null = null;
@@ -207,13 +247,41 @@ export default function HomeScreen() {
 
       <View style={styles.grid}>
         <QuickCard icon="checkbox-marked-circle-outline" iconType="mci" value={`${completedToday}/${habits.length}`} label="Habits Today" color={theme.primary} onPress={() => router.push("/(tabs)/habits")} />
-        <QuickCard icon="database" iconType="mci" value={(coins || 0).toString()} label="My Coins" color={theme.gold} onPress={() => router.push("/(tabs)/store")} />
+        <RNAnimated.View style={[styles.cardWrapper, { transform: [{ scale: coinScale }] }]}>
+          <TouchableOpacity onPress={() => router.push("/(tabs)/store")} activeOpacity={0.8} style={{ flex: 1 }}>
+            <CrystalCard style={styles.quickCard}>
+              <View style={[styles.cardIcon, { backgroundColor: (theme.gold || "#F59E0B") + "18" }]}>
+                <MaterialCommunityIcons name="database" size={22} color={theme.gold || "#F59E0B"} />
+              </View>
+              <Text style={[styles.cardValue, { color: theme.foreground }]} numberOfLines={1}>
+                {(coins || 0).toString()}
+              </Text>
+              <Text style={[styles.cardLabel, { color: theme.mutedForeground }]}>My Coins</Text>
+            </CrystalCard>
+          </TouchableOpacity>
+        </RNAnimated.View>
         <QuickCard icon="cash-outline" iconType="ionicons" value={`NRS ${Math.abs(balance).toLocaleString("en-US")}`} label="Budget" color={balance >= 0 ? theme.success : theme.destructive} onPress={() => router.push("/(tabs)/finance")} />
         <QuickCard icon="people-outline" iconType="ionicons" value={friends.length.toString()} label="Connections" color={theme.warning} onPress={() => router.push("/(tabs)/friends")} />
-        <QuickCard icon="run" iconType="mci" value={bmi ? bmi.toFixed(1) : "--"} label="BMI" color={theme.accent} onPress={() => router.push("/(tabs)/fitness")} />
+        <TouchableOpacity onPress={() => router.push("/(tabs)/fitness")} style={styles.cardWrapper} activeOpacity={0.8}>
+          <CrystalCard style={styles.quickCard}>
+            <View style={[styles.cardIcon, { backgroundColor: theme.accent + "18" }]}>
+              <MaterialCommunityIcons name="run" size={22} color={theme.accent} />
+            </View>
+            <Text style={[styles.cardValue, { color: theme.foreground }]} numberOfLines={1}>
+              {bmi ? bmi.toFixed(1) : "--"}
+            </Text>
+            {bmi ? (
+              <Text style={[styles.cardLabel, { color: getBmiCategory(bmi).color }]}>
+                {getBmiCategory(bmi).label}
+              </Text>
+            ) : (
+              <Text style={[styles.cardLabel, { color: theme.mutedForeground }]}>BMI</Text>
+            )}
+          </CrystalCard>
+        </TouchableOpacity>
       </View>
 
-      {habits.length > 0 && (
+      {habits.length > 0 ? (
         <TouchableOpacity
           onPress={() => router.push("/(tabs)/habits")}
           activeOpacity={0.85}
@@ -226,6 +294,7 @@ export default function HomeScreen() {
             </View>
           {habits.slice(0, 4).map((h) => {
             const done = h.completedDates.includes(today);
+            const streak = getConsecutiveStreak(h.completedDates);
             return (
               <View key={h.id} style={styles.habitRow}>
                 <Text style={{ fontSize: 18 }}>{h.emoji}</Text>
@@ -235,6 +304,11 @@ export default function HomeScreen() {
                 >
                   {h.name}
                 </Text>
+                {streak >= 2 && !done && (
+                  <View style={styles.miniStreakBadge}>
+                    <Text style={styles.miniStreakText}>🔥{streak}</Text>
+                  </View>
+                )}
                 <Ionicons name={done ? "checkmark-circle" : "ellipse-outline"} size={18} color={done ? theme.primary : theme.mutedForeground} />
               </View>
             );
@@ -242,6 +316,25 @@ export default function HomeScreen() {
             {habits.length > 4 && (
               <Text style={[styles.moreText, { color: theme.mutedForeground }]}>+{habits.length - 4} more habits</Text>
             )}
+          </CrystalCard>
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity
+          onPress={() => router.push("/(tabs)/habits")}
+          activeOpacity={0.85}
+          style={styles.habitsWrapper}
+        >
+          <CrystalCard style={[styles.habitsCard, { borderStyle: "dashed", borderColor: theme.primary + "40", alignItems: "center", justifyContent: "center", paddingVertical: 28 }]}>
+            <View style={[styles.emptyHabitIcon, { backgroundColor: theme.primary + "12" }]}>
+              <MaterialCommunityIcons name="star-plus-outline" size={32} color={theme.primary} />
+            </View>
+            <Text style={[styles.habitsCardTitle, { color: theme.foreground, marginTop: 12, fontSize: 16, fontWeight: "700" }]}>Start Your First Habit</Text>
+            <Text style={[styles.moreText, { color: theme.mutedForeground, textAlign: "center", marginTop: 6 }]}>
+              Small daily actions compound into{"\n"}extraordinary results.
+            </Text>
+            <View style={[styles.emptyHabitCTA, { backgroundColor: theme.primary }]}>
+              <Text style={styles.emptyHabitCTAText}>Create a Habit</Text>
+            </View>
           </CrystalCard>
         </TouchableOpacity>
       )}
@@ -351,5 +444,10 @@ const styles = StyleSheet.create({
   goalText: { fontSize: 13, fontFamily: "Inter_400Regular", marginTop: 4 },
   motivationBox: { marginBottom: 16, paddingHorizontal: 8, alignItems: "center" },
   motivationText: { fontSize: 13, fontFamily: "Inter_400Regular", fontStyle: "italic", lineHeight: 20, opacity: 0.55, textAlign: "center" },
+  miniStreakBadge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 10, backgroundColor: "rgba(245,158,11,0.15)" },
+  miniStreakText: { fontSize: 11, fontWeight: "700", color: "#F59E0B" },
+  emptyHabitIcon: { width: 64, height: 64, borderRadius: 22, alignItems: "center", justifyContent: "center" },
+  emptyHabitCTA: { marginTop: 14, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 16 },
+  emptyHabitCTAText: { color: "#fff", fontSize: 14, fontWeight: "700", fontFamily: "Inter_700Bold" },
 });
 

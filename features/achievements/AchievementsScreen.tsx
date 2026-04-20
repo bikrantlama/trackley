@@ -118,6 +118,8 @@ export default function AchievementsScreen() {
 
   const unlockedCount = achievements.filter((a) => a.unlockedAt).length;
   const progressPercent = (unlockedCount / achievements.length) * 100;
+  const earnedXP = achievements.filter((a) => a.unlockedAt).reduce((sum, a) => sum + (a.xpReward || 0), 0);
+  const totalAvailableXP = achievements.reduce((sum, a) => sum + (a.xpReward || 0), 0);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -148,6 +150,14 @@ export default function AchievementsScreen() {
                 { width: `${progressPercent}%` as `${number}%` }
               ]}
             />
+          </View>
+          <View style={styles.xpTotalsRow}>
+            <Text style={[styles.xpEarned, { color: "#F59E0B" }]}>
+              {earnedXP.toLocaleString()} XP earned
+            </Text>
+            <Text style={[styles.xpTotal, { color: colors.mutedForeground }]}>
+              / {totalAvailableXP.toLocaleString()} total
+            </Text>
           </View>
         </View>
       </View>
@@ -229,6 +239,9 @@ const styles = StyleSheet.create({
   progressPercent: { fontSize: 13, fontWeight: "800" },
   progressBarBg: { height: 8, borderRadius: 4, overflow: "hidden" },
   progressBarFill: { height: 8, borderRadius: 4 },
+  xpTotalsRow: { flexDirection: "row", alignItems: "baseline", marginTop: 10, gap: 2 },
+  xpEarned: { fontSize: 13, fontWeight: "800", fontFamily: "Inter_800ExtraBold" },
+  xpTotal: { fontSize: 12, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
 
   filterSection: { marginBottom: 15 },
   catList: { paddingHorizontal: 20, gap: 10 },

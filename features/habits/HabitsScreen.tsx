@@ -26,6 +26,7 @@ import Animated, {
   withSpring,
   withTiming,
   FadeInDown,
+  withDelay,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -53,6 +54,25 @@ const HABIT_EMOJIS = [
 
 const XP_PER_LEVEL = 300;
 const XP_PER_HABIT = 25;
+
+/** Returns the number of consecutive days completed up to and including today */
+function getConsecutiveStreak(completedDates: string[]): number {
+  if (completedDates.length === 0) return 0;
+  const sorted = [...completedDates].sort().reverse(); // newest first
+  const today = new Date();
+  let streak = 0;
+  for (let i = 0; i < sorted.length; i++) {
+    const expected = new Date(today);
+    expected.setDate(today.getDate() - i);
+    const expectedStr = expected.toISOString().split("T")[0];
+    if (sorted[i] === expectedStr) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
 
 const PRIORITY_COLORS = {
   high: "#F43F5E",
@@ -107,7 +127,8 @@ function HabitCard({
     onToggle(event);
   }
 
-  const streak = habit.completedDates.length;
+  const totalCompleted = habit.completedDates.length;
+  const consecutiveStreak = getConsecutiveStreak(habit.completedDates);
 
   return (
     <Animated.View style={[animStyle, { marginBottom: 10 }]}>
@@ -159,10 +180,18 @@ function HabitCard({
             >
               {habit.name}
             </Text>
-            <Text style={[styles.streak, { color: colors.mutedForeground }]}>
-              {habit.reminderTime ? `⏰ ${habit.reminderTime} • ` : ""}
-              {streak} day{streak !== 1 ? "s" : ""} completed
-            </Text>
+            <View style={styles.streakRow}>
+              {consecutiveStreak >= 1 && (
+                <View style={[styles.streakPill, { backgroundColor: "#F59E0B15" }]}>
+                  <Text style={styles.streakFire}>🔥</Text>
+                  <Text style={[styles.streakCount, { color: "#F59E0B" }]}>{consecutiveStreak} day streak</Text>
+                </View>
+              )}
+              <Text style={[styles.streak, { color: colors.mutedForeground }]}>
+                {habit.reminderTime ? `⏰ ${habit.reminderTime} • ` : ""}
+                {totalCompleted} total
+              </Text>
+            </View>
           </View>
         <TouchableOpacity
           onPress={handlePress}
@@ -206,6 +235,15 @@ function XPBar({ xp, level }: { xp: number; level: number }) {
   const progress = Math.max(0, Math.min(xpInLevel / xpNeededForNext, 1));
   const rank = getRankForLevel(level);
 
+  // Animated XP bar fill
+  const barWidth = useSharedValue(0);
+  React.useEffect(() => {
+    barWidth.value = withDelay(300, withTiming(progress * 100, { duration: 800 }));
+  }, [progress]);
+  const barStyle = useAnimatedStyle(() => ({
+    width: `${barWidth.value}%` as `${number}%`,
+  }));
+
   return (
     <GlassContainer style={styles.xpContainer}>
       <View style={styles.xpHeader}>
@@ -216,13 +254,11 @@ function XPBar({ xp, level }: { xp: number; level: number }) {
         <TrackleyLogo size={32} />
       </View>
       <View style={[styles.xpBarBg, { backgroundColor: colors.secondary }]}>
-        <View
+        <Animated.View
           style={[
             styles.xpBarFill,
-            {
-              backgroundColor: colors.primary,
-              width: `${Math.min(progress * 100, 100)}%` as `${number}%`,
-            },
+            barStyle,
+            { backgroundColor: colors.primary },
           ]}
         />
       </View>
@@ -659,7 +695,11 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
     marginBottom: 2,
   },
-  streak: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  streak: { fontSize: 11, fontFamily: "Inter_400Regular", opacity: 0.7 },
+  streakRow: { flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap", marginTop: 2 },
+  streakPill: { flexDirection: "row", alignItems: "center", gap: 3, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 10 },
+  streakFire: { fontSize: 11 },
+  streakCount: { fontSize: 11, fontWeight: "700", fontFamily: "Inter_700Bold" },
   checkBtn: {
     width: 28,
     height: 28,

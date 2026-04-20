@@ -498,8 +498,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const completeOnboarding = useCallback(() => {
-    save({ ...state, hasCompletedOnboarding: true });
-  }, [state, save]);
+    setState((prev) => {
+      const next = { ...prev, hasCompletedOnboarding: true };
+      return { ...next, achievements: checkAchievements(next, next.achievements) };
+    });
+  }, []);
 
   // ─── Habits ────────────────────────────────────────────────────────────────
 

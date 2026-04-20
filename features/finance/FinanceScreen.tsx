@@ -55,6 +55,57 @@ const INCOME_CATEGORIES = [
   { label: "Other", icon: "bank", color: "#6B7280" },
 ];
 
+function CategoryBreakdown({ transactions }: { transactions: any[] }) {
+  const colors = useTheme();
+  const expenses = transactions.filter((t) => t.type === "expense");
+  const total = expenses.reduce((s, t) => s + t.amount, 0);
+
+  if (expenses.length === 0 || total === 0) return null;
+
+  const grouped = EXPENSE_CATEGORIES.map((cat) => {
+    const amount = expenses.filter((t) => t.category === cat.label).reduce((s, t) => s + t.amount, 0);
+    return { ...cat, amount, pct: total > 0 ? (amount / total) * 100 : 0 };
+  }).filter((c) => c.amount > 0).sort((a, b) => b.amount - a.amount);
+
+  return (
+    <Animated.View entering={FadeInDown.delay(100).springify()}>
+      <View style={[catStyles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <Text style={[catStyles.title, { color: colors.foreground }]}>Spending Breakdown</Text>
+        {/* Segmented bar */}
+        <View style={catStyles.bar}>
+          {grouped.map((cat) => (
+            <View
+              key={cat.label}
+              style={{ flex: cat.pct, backgroundColor: cat.color, minWidth: cat.pct > 2 ? 1 : 0 }}
+            />
+          ))}
+        </View>
+        {/* Legend */}
+        <View style={catStyles.legend}>
+          {grouped.slice(0, 5).map((cat) => (
+            <View key={cat.label} style={catStyles.legendItem}>
+              <View style={[catStyles.dot, { backgroundColor: cat.color }]} />
+              <Text style={[catStyles.legendLabel, { color: colors.mutedForeground }]}>{cat.label}</Text>
+              <Text style={[catStyles.legendPct, { color: colors.foreground }]}>{cat.pct.toFixed(0)}%</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+    </Animated.View>
+  );
+}
+
+const catStyles = StyleSheet.create({
+  container: { marginHorizontal: 16, marginBottom: 6, borderRadius: 20, padding: 16, borderWidth: 1.5 },
+  title: { fontSize: 14, fontWeight: "800", fontFamily: "Inter_800ExtraBold", marginBottom: 12 },
+  bar: { height: 10, borderRadius: 6, flexDirection: "row", overflow: "hidden", marginBottom: 12, gap: 2 },
+  legend: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  legendItem: { flexDirection: "row", alignItems: "center", gap: 5 },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+  legendLabel: { fontSize: 11, fontFamily: "Inter_500Medium" },
+  legendPct: { fontSize: 11, fontWeight: "700", fontFamily: "Inter_700Bold" },
+});
+
 function TransactionCard({ item, onDelete, index }: { item: Transaction; onDelete: () => void; index: number }) {
   const colors = useTheme();
   const isIncome = item.type === "income";
@@ -178,6 +229,8 @@ function PersonalTab() {
           </View>
         </LinearGradient>
       </Animated.View>
+
+      <CategoryBreakdown transactions={transactions} />
 
       <View style={styles.listHeaderRow}>
         <Text style={[styles.listTitle, { color: colors.foreground }]}>Recent Activity</Text>
