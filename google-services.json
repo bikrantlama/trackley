@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "549984629639",
+    "project_id": "tracklyapp-okb-01",
+    "storage_bucket": "tracklyapp-okb-01.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:549984629639:android:a98c3769b0f837d5419922",
+        "android_client_info": {
+          "package_name": "com.trackly.lifestyle"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBbAp4g8MWWhoRuOkT-EBFkMDpK7Z-I7xM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
